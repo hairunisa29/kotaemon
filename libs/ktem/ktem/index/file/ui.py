@@ -1665,7 +1665,6 @@ class FileSelector(BasePage):
             "Clear",
             visible=True,
         )
-        self.filtered_file_list = gr.Markdown(visible=True)
         self.filtered_file_ids = gr.State(value=filtered_files_ids)
         self.selector_user_id = gr.State(value=user_id)
         self.selector_choices = gr.JSON(
@@ -1680,7 +1679,6 @@ class FileSelector(BasePage):
         #         gr.update(visible=mode == "date"),
         #         gr.update(visible=mode == "date"),
         #         gr.update(visible=mode == "date"),
-        #         gr.update(visible=mode == "date"),
         #         user_id
         #     ),
         #     inputs=[self.mode, self._app.user_id],
@@ -1689,7 +1687,6 @@ class FileSelector(BasePage):
         #         self.start_date_picker,
         #         self.end_date_picker,
         #         self.apply_date_filter_button,
-        #         self.filtered_file_list,
         #         self.selector_user_id
         #     ],
         # )
@@ -1702,7 +1699,7 @@ class FileSelector(BasePage):
                 self.search_keyword_input,
                 self.search_company_input,
             ],
-            outputs=[self.filtered_file_ids, self.filtered_file_list],
+            outputs=[self.filtered_file_ids],
         )
         self.clear_button.click(
             fn=self.get_all_files,
@@ -1711,7 +1708,6 @@ class FileSelector(BasePage):
                 self.filtered_file_ids, 
                 self.start_date_picker, 
                 self.end_date_picker,
-                self.filtered_file_list, 
                 self.search_keyword_input,
                 self.search_company_input
             ],
@@ -1841,13 +1837,6 @@ class FileSelector(BasePage):
 
         return gr.update(value=selected_files, choices=options), options
 
-    def format_file_list(self, file_ids):
-        if not file_ids:
-            return "No files found."
-        Source = self._index._resources["Source"]
-        with Session(engine) as session:
-            files = session.query(Source).filter(Source.id.in_(file_ids)).all()
-            return "\n".join(f"- {file.name}" for file in files)
         
     def get_filtered_files_and_list(self, start, end, user_id, keyword, company):
         # Convert float timestamps to datetime
@@ -1866,14 +1855,14 @@ class FileSelector(BasePage):
             end = datetime.datetime.combine(end, datetime.time(23, 59, 59))
 
         file_ids = self.get_selected_ids(["filter", [], start, end, [], user_id, keyword, company])
-        file_list_str = self.format_file_list(file_ids)
-        return file_ids, file_list_str
+
+        return file_ids
 
     def get_all_files(self, user_id):
         # Show all files for the user (no filters)
         file_ids = self.get_selected_ids(["all", [], "", "", [], user_id, "", ""])
-        file_list_str = self.format_file_list(file_ids)
-        return file_ids, "", "", file_list_str, "", ""
+
+        return file_ids, "", "", "", ""
 
     def _on_app_created(self):
         self._app.app.load(
@@ -1914,7 +1903,6 @@ class FileSelector(BasePage):
                             self.filtered_file_ids, 
                             self.start_date_picker, 
                             self.end_date_picker,
-                            self.filtered_file_list, 
                             self.search_keyword_input,
                             self.search_company_input
                         ],
@@ -1927,7 +1915,7 @@ class FileSelector(BasePage):
                     definition={
                         "fn": lambda user_id: ([], "No files found."),
                         "inputs": [self._app.user_id],
-                        "outputs": [self.filtered_file_ids, self.filtered_file_list],
+                        "outputs": [self.filtered_file_ids],
                         "show_progress": "hidden",
                     },
                 )

@@ -9,7 +9,7 @@ from decouple import config
 from ktem.app import BasePage
 from ktem.components import reasonings
 from ktem.db.models import Conversation, engine
-from ktem.index.file.ui import File
+from ktem.index.file.ui import File, FileSelector
 from ktem.reasoning.prompt_optimization.mindmap import MINDMAP_HTML_EXPORT_TEMPLATE
 from ktem.reasoning.prompt_optimization.suggest_conversation_name import (
     SuggestConvNamePipeline,
@@ -37,6 +37,7 @@ from .control import ConversationControl
 from .demo_hint import HintPage
 from .paper_list import PaperListPage
 from .report import ReportIssue
+from .file_list import FileList
 
 KH_DEMO_MODE = getattr(flowsettings, "KH_DEMO_MODE", False)
 KH_SSO_ENABLED = getattr(flowsettings, "KH_SSO_ENABLED", False)
@@ -202,6 +203,9 @@ class ChatPage(BasePage):
         self._app = app
         self._indices_input = []
 
+        self.file_selector = FileSelector(self._app, self._app.index_manager.indices[0])
+        self.file_list = FileList(self._app, self.file_selector._index)
+
         self.on_building_ui()
 
         self._preview_links = gr.State(value=None)
@@ -267,6 +271,8 @@ class ChatPage(BasePage):
                                 index.default_selector = index_ui.default()
                                 self._indices_input.append(gr_index)
                         setattr(self, f"_index_{index.id}", index_ui)
+
+                self.file_list_container = self.file_list.container
 
                 self.chat_suggestion = ChatSuggestion(self._app)
 
@@ -420,6 +426,12 @@ class ChatPage(BasePage):
                 outputs=None,
                 js=recommended_papers_js,
             )
+
+        self.file_selector.filtered_file_ids.change(
+            fn=self.file_list.update,
+            inputs=[self.file_selector.filtered_file_ids],
+            outputs=[self.file_list_container],
+        )
 
         chat_event = (
             gr.on(
