@@ -4,6 +4,10 @@ from ktem.app import BasePage
 from ktem.db.engine import engine
 from sqlalchemy.orm import Session
 
+ASSETS_DIR = "assets/icons"
+if not os.path.isdir(ASSETS_DIR):
+    ASSETS_DIR = "libs/ktem/ktem/assets/icons"
+
 class FileList(BasePage):
     def __init__(self, app, index):
         self._app = app
@@ -14,7 +18,6 @@ class FileList(BasePage):
         self.container = gr.HTML(visible=True)
 
     def update(self, file_ids):
-        print("FILE LIST", file_ids)
         index = self._index
 
         if not file_ids:
@@ -35,12 +38,19 @@ class FileList(BasePage):
                     "date_from_file_name": file.date_from_file_name.strftime("%d/%m/%Y") if file.date_from_file_name else "",
                     "date_from_content": file.date_from_content.strftime("%d/%m/%Y") if file.date_from_content else "",
                 })
-            
-            print("PRINT FILE DICTS INSIDE FILE LIST", file_dicts)
 
             if not file_dicts:
                 return gr.update(value="<div>No files found.</div>")
             cards = []
+
+            eye_icon_path = f"{ASSETS_DIR}/eye.svg"
+            with open(eye_icon_path, "r", encoding="utf-8") as f:
+                eye_svg = f.read()
+
+            calendar_icon_path = f"{ASSETS_DIR}/calendar.svg"
+            with open(calendar_icon_path, "r", encoding="utf-8") as f:
+                calendar_svg = f.read()
+
             for file in file_dicts:
                 display_date = (
                     file["date_from_file_name"]
@@ -54,11 +64,25 @@ class FileList(BasePage):
                             {file["name"]}
                         </div>
                         <div style="display:flex; align-items:center; gap:6px; color:#555;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;"><rect x="3" y="4" width="18" height="18" rx="2" fill="#eee" stroke="#bbb"/><rect x="7" y="10" width="10" height="8" rx="1" fill="#fff" stroke="#bbb"/><rect x="7" y="2" width="2" height="4" rx="1" fill="#bbb"/><rect x="15" y="2" width="2" height="4" rx="1" fill="#bbb"/></svg>
+                            <span style="display:inline-flex; align-items:center; height:18px; width:18px; background:#fff; border-radius:4px">{calendar_svg}</span>
                             <span style="font-size:0.95em;">{display_date}</span>
                         </div>
-                        <button style="align-self:flex-end; background:#fff; border:1px solid #bbb; border-radius:5px; padding:3px 12px; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#888" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#888"/></svg>
+                        <button style="
+                            align-self:flex-end;
+                            background:#fff;
+                            border:2px solid #444;
+                            border-radius:12px;
+                            padding:2px 14px 2px 10px;
+                            cursor:pointer;
+                            display:flex;
+                            align-items:center;
+                            gap:6px;
+                            font-size:1.1em;
+                            font-weight:500;
+                            color:#222;
+                            transition:box-shadow 0.1s;
+                        ">
+                            <span style="display:inline-flex; align-items:center; height:20px; width:20px;">{eye_svg}</span>
                             show
                         </button>
                     </div>
