@@ -203,8 +203,12 @@ class ChatPage(BasePage):
         self._app = app
         self._indices_input = []
 
-        self.file_selector = FileSelector(self._app, self._app.index_manager.indices[0])
-        self.file_list = FileList(self._app, self.file_selector._index)
+        self.file_ids = []
+        self.indexFileSelector = ""
+        self.file_list_container = None
+
+        # self.file_selector = FileSelector(self._app, self._app.index_manager.indices[0])
+        # self.file_list = FileList(self._app, self.file_selector._index)
 
         self.on_building_ui()
 
@@ -251,6 +255,10 @@ class ChatPage(BasePage):
                         index_ui.render()
                         gr_index = index_ui.as_gradio_component()
 
+                        if index_id == 0:
+                            self.file_ids = index_ui.filtered_file_ids
+                            self.indexFileSelector = index
+
                         # get the file selector choices for the first index
                         if index_id == 0:
                             self.first_selector_choices = index_ui.selector_choices
@@ -272,7 +280,7 @@ class ChatPage(BasePage):
                                 self._indices_input.append(gr_index)
                         setattr(self, f"_index_{index.id}", index_ui)
 
-                self.file_list_container = self.file_list.container
+                self.file_list_container = FileList(self._app, self.indexFileSelector)
 
                 self.chat_suggestion = ChatSuggestion(self._app)
 
@@ -427,10 +435,10 @@ class ChatPage(BasePage):
                 js=recommended_papers_js,
             )
 
-        self.file_selector.filtered_file_ids.change(
-            fn=self.file_list.update,
-            inputs=[self.file_selector.filtered_file_ids],
-            outputs=[self.file_list_container],
+        self.file_ids.change(
+            fn=self.file_list_container.update,
+            inputs=[self.file_ids],
+            outputs=[self.file_list_container.container],
         )
 
         chat_event = (
