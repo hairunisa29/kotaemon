@@ -14,7 +14,6 @@ from functools import lru_cache
 from hashlib import sha256
 from pathlib import Path
 from typing import Generator, Optional, Sequence
-from keybert import KeyBERT
 
 import tiktoken
 from decouple import config
@@ -81,17 +80,6 @@ def dev_settings():
 
 
 _default_token_func = tiktoken.encoding_for_model("gpt-3.5-turbo").encode
-
-kw_model = KeyBERT()
-
-def extract_keywords_long(text, chunk_size=1000, top_n=5):
-    chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
-    all_keywords = []
-    for chunk in chunks:
-        keywords = kw_model.extract_keywords(chunk, top_n=top_n)
-        all_keywords.extend(keywords)
-    # Deduplicate
-    return list(set([kw for kw, _ in all_keywords]))
 
 def parse_date_from_string(date_str):
     if not date_str:
@@ -399,13 +387,6 @@ class IndexPipeline(BaseComponent):
         else:
             all_chunks = text_docs
 
-        file_keywords_set = set()
-        for chunk in all_chunks:
-            if hasattr(chunk, "text"):
-                chunk_keywords = extract_keywords_long(chunk.text)
-                chunk.metadata["keywords"] = ", ".join(chunk_keywords)
-                file_keywords_set.update(chunk_keywords)
-
         # add the thumbnails doc_id to the chunks
         for chunk in all_chunks:
             page_label = chunk.metadata.get("page_label", None)
@@ -451,7 +432,7 @@ class IndexPipeline(BaseComponent):
             yield from insert_chunks_to_vectorstore()
 
         print("indexing step took", time.time() - s_time)
-        return n_chunks, list(file_keywords_set)
+        return n_chunks
 
     def handle_chunks_docstore(self, chunks, file_id):
         """Run chunks"""
@@ -684,13 +665,13 @@ class IndexPipeline(BaseComponent):
         full_text = "\n\n".join(getattr(doc, "text", str(doc)) for doc in docs)
         llm_result = llm_parser.parse_dates_and_company(full_text, file_name)
 
-        n_chunks, file_keywords = yield from self.handle_docs(docs, file_id, file_name)
+        yield from self.handle_docs(docs, file_id, file_name)
 
-        # --- Update the Source record with file-level keywords ---
+        # --- Update the Source record ---
         with Session(engine) as session:
             source = session.get(self.Source, file_id)
             if source:
-                source.keywords = file_keywords
+                source.keywords = llm_result.get("keywords", [])
                 source.date_from_file_name = parse_date_from_string(llm_result.get("date_file_name"))
                 source.date_from_content = parse_date_from_string(llm_result.get("date_content"))
                 source.company = llm_result.get("company", [])
@@ -898,14 +879,17 @@ class LLMParser:
             "If it's a range, return the latest possible date in 'DD-MM-YYYY' format. If no date is found, return null.\n"
             "2. The **meeting date** found in the content (the date the meeting happened, ignore other unrelated dates). "
             "If no clear meeting date is found, return null.\n"
-            "3. The name of the **company that held the meeting**, and any **other companies involved** (mentioned or participated).\n\n"
+            "3. The name of the **company that held the meeting**, and any **other companies involved** (mentioned or participated).\n"
+            "4. Extract the top relevant **keywords**, including important topics, names, and **abbreviations** (e.g., 'AI', 'IPO', 'GDP') that represent the main ideas of the content. "
+            "Prioritize meaningful terms over generic words. Return between 5 to 10 items if possible.\n\n"
             "Return the result strictly as a single line of valid JSON. "
             "Do NOT use markdown, triple backticks, or any extra formatting. "
             "Only output the JSON object, nothing else.\n"
             '{\n'
             '  "date_file_name": "DD-MM-YYYY" or null,\n'
             '  "date_content": "DD-MM-YYYY" or null,\n'
-            '  "company": ["Company A", "Company B"]\n'
+            '  "company": ["Company A", "Company B"],\n'
+            '  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]\n'
             '}\n\n'
             f"File name: {file_name}\n\n"
             f"Content: {text}"

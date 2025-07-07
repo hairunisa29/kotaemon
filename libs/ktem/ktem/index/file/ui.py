@@ -2101,7 +2101,7 @@ class FileSelector(BasePage):
                     text(
                         f"""EXISTS (
                             SELECT 1 FROM json_each({Source.keywords.key})
-                            WHERE LOWER(value) = LOWER(:keyword)
+                            WHERE LOWER(value) LIKE LOWER(:keyword)
                         )"""
                     )
                 ).params(keyword=keyword)
