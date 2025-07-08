@@ -176,7 +176,7 @@ class UserManagement(BasePage):
             with gr.Row():
                 gr.Markdown(USERNAME_RULE)
                 gr.Markdown(PASSWORD_RULE)
-            self.btn_new = gr.Button("Create user")
+            self.btn_new = gr.Button("Create user", variant="primary")
 
     def on_register_events(self):
         self.btn_new.click(
