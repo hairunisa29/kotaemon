@@ -560,3 +560,8 @@ div.markmap {
 .submit-button {
   background-color: #E8F0FE;
 }
+
+/* making upload panel not growing too large when uploading files */
+.upload-panel {
+  flex-grow: 0 !important;
+}
