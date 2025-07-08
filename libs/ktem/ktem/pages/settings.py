@@ -252,7 +252,7 @@ class SettingsPage(BasePage):
             self.password_change_confirm = gr.Textbox(
                 label="Confirm password", interactive=True, type="password"
             )
-            self.password_change_btn = gr.Button("Change password", interactive=True)
+            self.password_change_btn = gr.Button("Change password", interactive=True, variant="primary")
             
             self.signout = gr.Button("Logout", variant="stop")
 

@@ -1993,10 +1993,12 @@ class FileSelector(BasePage):
         self.apply_filter_button = gr.Button(
             "Apply",
             visible=True,
+            variant="primary",
         )
         self.clear_button = gr.Button(
             "Clear",
             visible=True,
+            variant="stop",
         )
         self.filtered_file_ids = gr.State(value=filtered_files_ids)
         self.selector_user_id = gr.State(value=user_id)
