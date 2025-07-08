@@ -249,7 +249,7 @@ class App(BaseApp):
                     if k == "login-tab":
                         tabs_update.append(gr.update(visible=False))
                     elif k == "resources-tab":
-                        tabs_update.append(gr.update(visible=False))
+                        tabs_update.append(gr.update(visible=is_admin and not KH_DEMO_MODE))
                     else:
                         tabs_update.append(gr.update(visible=True))
 

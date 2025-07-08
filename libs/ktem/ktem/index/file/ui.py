@@ -510,7 +510,7 @@ class FileIndexPage(BasePage):
             with gr.Column(scale=1):
                 gr.Markdown("## File Upload")
                 with gr.Column() as self.upload:
-                    with gr.Column("Upload Files"):
+                    with gr.Column("Upload Files", elem_classes=["upload-panel"]):
                         self.files = File(
                             file_types=self._supported_file_types,
                             file_count="multiple",
@@ -522,6 +522,11 @@ class FileIndexPage(BasePage):
                         if msg:
                             gr.Markdown(msg)
 
+                    self.upload_button = gr.Button(
+                        "Upload and Index", variant="primary"
+                    )
+
+                    
                     with gr.Column("Use Web Links", visible=False):
                         self.urls = gr.Textbox(
                             label="Input web URLs",
@@ -535,9 +540,6 @@ class FileIndexPage(BasePage):
                                 value=False, label="Force reindex file", container=False
                             )
 
-                    self.upload_button = gr.Button(
-                        "Upload and Index", variant="primary"
-                    )
 
             with gr.Column(scale=4):
                 with gr.Column(visible=False) as self.upload_progress_panel:
